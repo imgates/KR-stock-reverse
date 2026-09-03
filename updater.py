@@ -17,8 +17,10 @@ def fetch_recent_data(item_code):
         
     history = []
     for d in data:
+        raw_date = d['localTradedAt'].replace("-", "").replace(".", "")
+        formatted_date = f"{raw_date[4:6]}.{raw_date[6:8]}"
         history.append({
-            "date": f"{d['localTradedAt'][4:6]}.{d['localTradedAt'][6:8]}",
+            "date": formatted_date,
             "close": int(d["closePrice"].replace(",", ""))
         })
     history.reverse()
