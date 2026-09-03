@@ -8,22 +8,32 @@ TARGETS = [
 ]
 
 def fetch_recent_data(item_code):
-    url = f"https://m.stock.naver.com/api/stock/{item_code}/price?pageSize=5&page=1"
+    # 장중 실시간 데이터 혼입 방지를 위해 10개를 넉넉히 가져옴
+    url = f"https://m.stock.naver.com/api/stock/{item_code}/price?pageSize=10&page=1"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req) as res:
         data = json.loads(res.read().decode("utf-8"))
         
+    now = datetime.now()
+    # 장 마감(오후 3시 30분) 전이면 첫 번째(당일 실시간 행)를 제외하고 전일 종가부터 취합
+    # 깃허브 서버는 UTC 기준이므로 한국시간 환산 기준 적용
+    is_market_closed = (now.hour > 6) or (now.hour == 6 and now.minute >= 35)
+    
+    start_idx = 0 if is_market_closed else 1
+    recent_5_items = data[start_idx : start_idx + 5]
+    
     history = []
-    for d in data:
+    for d in recent_5_items:
         raw_date = d['localTradedAt'].replace("-", "").replace(".", "")
         formatted_date = f"{raw_date[4:6]}.{raw_date[6:8]}"
         history.append({
             "date": formatted_date,
             "close": int(d["closePrice"].replace(",", ""))
         })
-    history.reverse()
+        
+    history.reverse() # 과거 날짜 -> 최신 날짜 순 정렬
     return history
 
 def run():
