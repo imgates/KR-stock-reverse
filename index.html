@@ -31,7 +31,6 @@
     .stat-label { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 4px; display: flex; justify-content: space-between; }
     .stat-val { font-size: 1.05rem; font-weight: 700; }
     
-    /* 종목 선택 필터 탭 */
     .tab-bar { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px; }
     .tab-btn { background: #0b1120; border: 1px solid var(--border); color: var(--text-sub); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
     .tab-btn.active { background: var(--accent); color: #0f172a; font-weight: bold; border-color: var(--accent); }
@@ -45,6 +44,7 @@
     .badge-sell { background: rgba(248, 113, 113, 0.2); color: var(--sell); }
     .badge-buy { background: rgba(74, 222, 128, 0.2); color: var(--buy); }
     .reset-btn { background: transparent; border: 1px solid var(--border); color: var(--text-sub); font-size: 0.72rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .date-cell { color: var(--text-sub); font-size: 0.75rem; }
   </style>
 </head>
 <body>
@@ -72,7 +72,7 @@
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
       <span style="font-weight: 600; font-size: 0.95rem;">📝 체결 내역 장부</span>
-      <button class="reset-btn" onclick="resetData()">초기화</button>
+      <button class="reset-btn" onclick="resetData()">기록 초기화</button>
     </div>
 
     <!-- 종목별 탭 바 -->
@@ -85,6 +85,7 @@
       <table>
         <thead>
           <tr>
+            <th>날짜</th>
             <th>구분</th>
             <th>종목명</th>
             <th>수량</th>
@@ -98,6 +99,7 @@
   </div>
 
   <script>
+    // 날짜가 모두 표기된 초기 데이터
     const initialConfig = {
       selectedTab: "ALL",
       portfolio: {
@@ -105,20 +107,20 @@
         "SK스퀘어": { code: "402340", qty: 7, avgPrice: 1848188, cash: 4317000, targetQty: 2 }
       },
       trades: [
-        { type: "매도", name: "SK하이닉스", qty: 1, price: 1842000, pnl: -626866, date: "09.08" },
-        { type: "매도", name: "SK스퀘어", qty: 1, price: 1162000, pnl: -686188, date: "09.08" },
-        { type: "매도", name: "SK스퀘어", qty: 1, price: 1100000, pnl: -748188, date: "09.07" },
-        { type: "매도", name: "SK하이닉스", qty: 1, price: 1735000, pnl: -733866, date: "09.07" },
-        { type: "매도", name: "SK스퀘어", qty: 1, price: 1048000, pnl: -800188, date: "09.04" },
-        { type: "매도", name: "SK스퀘어", qty: 1, price: 1007000, pnl: -841188, date: "09.04" },
-        { type: "매도", name: "SK하이닉스", qty: 1, price: 1645000, pnl: -823866, date: "09.04" }
+        { date: "09.08", type: "매도", name: "SK하이닉스", qty: 1, price: 1842000, pnl: -626866 },
+        { date: "09.08", type: "매도", name: "SK스퀘어", qty: 1, price: 1162000, pnl: -686188 },
+        { date: "09.07", type: "매도", name: "SK하이닉스", qty: 1, price: 1735000, pnl: -733866 },
+        { date: "09.07", type: "매도", name: "SK스퀘어", qty: 1, price: 1100000, pnl: -748188 },
+        { date: "09.04", type: "매도", name: "SK스퀘어", qty: 1, price: 1048000, pnl: -800188 },
+        { date: "09.04", type: "매도", name: "SK스퀘어", qty: 1, price: 1007000, pnl: -841188 },
+        { date: "09.04", type: "매도", name: "SK하이닉스", qty: 1, price: 1645000, pnl: -823866 }
       ]
     };
 
-    let appData = JSON.parse(localStorage.getItem("stock_dashboard_data_v2")) || initialConfig;
+    let appData = JSON.parse(localStorage.getItem("stock_dashboard_data_v3")) || initialConfig;
 
     function saveData() {
-      localStorage.setItem("stock_dashboard_data_v2", JSON.stringify(appData));
+      localStorage.setItem("stock_dashboard_data_v3", JSON.stringify(appData));
       render();
     }
 
@@ -163,18 +165,21 @@
         target.cash = Math.max(0, target.cash - (price * qty));
       }
 
-      const today = new Date();
-      const dateStr = `${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+      // 오늘 날짜 자동 추출 (MM.DD 형태)
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const dateStr = `${month}.${day}`;
 
-      appData.trades.unshift({ type, name, qty, price, pnl, date: dateStr });
-      appData.selectedTab = name; // 추가된 종목 탭으로 자동 이동
+      appData.trades.unshift({ date: dateStr, type, name, qty, price, pnl });
+      appData.selectedTab = name; 
       document.getElementById("kakaoInput").value = "";
       saveData();
-      alert(`[${name}] ${type} ${qty}주 반영 완료!`);
+      alert(`[${name}] ${dateStr} ${type} ${qty}주 반영 완료!`);
     }
 
     function render() {
-      // 1. 포트폴리오 카드 렌더링
+      // 1. 보유 종목 카드
       const cards = document.getElementById("portfolioCards");
       cards.innerHTML = "";
       let totalCash = 0;
@@ -195,7 +200,7 @@
         `;
       }
 
-      // 2. 종목 탭 바 렌더링
+      // 2. 탭 바
       const tabBar = document.getElementById("tabBar");
       const stockNames = ["ALL", ...Object.keys(appData.portfolio)];
       tabBar.innerHTML = stockNames.map(name => {
@@ -204,7 +209,7 @@
         return `<button class="tab-btn ${activeClass}" onclick="selectTab('${name}')">${label}</button>`;
       }).join("");
 
-      // 3. 체결 내역 필터링 및 렌더링
+      // 3. 체결 리스트 및 필터 요약
       const currentTab = appData.selectedTab || "ALL";
       const filteredTrades = currentTab === "ALL" 
         ? appData.trades 
@@ -212,31 +217,29 @@
 
       let tabLoss = 0;
       let tabCash = 0;
-      let tabCount = filteredTrades.length;
 
       filteredTrades.forEach(t => {
         if (t.pnl) tabLoss += t.pnl;
         if (t.type === "매도") tabCash += (t.price * t.qty);
       });
 
-      // 전역 합계 계산
       appData.trades.forEach(t => { if (t.pnl) totalLoss += t.pnl; });
 
-      // 필터 요약 표시
       const summaryText = currentTab === "ALL"
-        ? `전체 거래건수: <b>${tabCount}건</b>`
+        ? `전체 거래건수: <b>${filteredTrades.length}건</b>`
         : `<b>${currentTab}</b> 실현손익: <b style="color:var(--sell)">${tabLoss.toLocaleString()}원</b> | 누적매도금: <b style="color:var(--accent)">${tabCash.toLocaleString()}원</b>`;
       document.getElementById("filterSummary").innerHTML = summaryText;
 
       const history = document.getElementById("tradeHistory");
       if (filteredTrades.length === 0) {
-        history.innerHTML = `<tr><td colspan="5" style="color:var(--text-sub); padding:16px;">체결 내역이 없습니다.</td></tr>`;
+        history.innerHTML = `<tr><td colspan="6" style="color:var(--text-sub); padding:16px;">체결 내역이 없습니다.</td></tr>`;
       } else {
         history.innerHTML = filteredTrades.map(t => {
           const badgeClass = t.type === "매도" ? "badge-sell" : "badge-buy";
           const pnlColor = t.pnl < 0 ? 'var(--sell)' : (t.pnl > 0 ? 'var(--buy)' : 'inherit');
           return `
             <tr>
+              <td class="date-cell">${t.date || '-'}</td>
               <td><span class="badge ${badgeClass}">${t.type}</span></td>
               <td><b>${t.name}</b></td>
               <td>${t.qty}주</td>
@@ -252,7 +255,7 @@
     }
 
     function resetData() {
-      if (confirm("초기 데이터로 되돌리겠습니까?")) {
+      if (confirm("모든 데이터를 오늘(09.08) 기본값으로 되돌리겠습니까?")) {
         appData = JSON.parse(JSON.stringify(initialConfig));
         saveData();
       }
