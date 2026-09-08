@@ -17,7 +17,38 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text-main); padding: 16px; max-width: 800px; margin: 0 auto; }
-    h1 { font-size: 1.25rem; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    
+    /* 헤더 */
+    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .top-header h1 { font-size: 1.15rem; font-weight: 700; }
+    
+    /* 최상단 메인 토탈 지표 카드 */
+    .hero-stat-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #3b82f6;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .hero-main-group { text-align: center; padding: 6px 0; }
+    .hero-label { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
+    .hero-big-number { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    
+    .hero-sub-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+    .hero-sub-item { text-align: center; }
+    .hero-sub-label { font-size: 0.75rem; color: var(--text-sub); }
+    .hero-sub-val { font-size: 1.05rem; font-weight: 700; margin-top: 2px; }
+
     .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
     
     .input-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -30,7 +61,7 @@
     button.action-btn { width: 100%; padding: 12px; background: #2563eb; color: #fff; font-size: 0.95rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
     button.action-btn:active { background: #1d4ed8; }
     
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
     @media (max-width: 500px) { .summary-grid { grid-template-columns: 1fr; } }
     .stat-box { background: #0b1120; padding: 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; position: relative; }
     .stat-box.active-card { border-color: var(--accent); background: #132238; }
@@ -51,11 +82,10 @@
     .badge-buy { background: rgba(74, 222, 128, 0.2); color: var(--buy); }
     .date-cell { color: var(--text-sub); font-size: 0.75rem; }
 
-    /* 보조 버튼 스타일 */
     .btn-row { display: flex; gap: 6px; }
     .sub-btn { background: #1e293b; border: 1px solid var(--border); color: var(--text-sub); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
     
-    /* 종목 설정 팝업(모달) */
+    /* 모달 */
     #editModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
     .modal-box { background: #1e293b; padding: 16px; border-radius: 12px; width: 90%; max-width: 360px; border: 1px solid var(--border); }
     .form-group { margin-bottom: 10px; }
@@ -65,15 +95,33 @@
 </head>
 <body>
 
-  <h1>
-    <span>📊 프로젝트H 대시보드</span>
+  <div class="top-header">
+    <h1>📊 프로젝트H 매매 대시보드</h1>
     <div class="btn-row">
       <button class="sub-btn" onclick="openAddModal()">+ 종목추가</button>
       <button class="sub-btn" onclick="resetData()">초기화</button>
     </div>
-  </h1>
+  </div>
 
-  <!-- 카톡 알림 입력 -->
+  <!-- ⭐ [신설] 최상단 단일 빅 넘버 실현손익 카드 -->
+  <div class="hero-stat-card">
+    <div class="hero-main-group">
+      <div class="hero-label">💰 총 누적 실현손익 (전 종목 합산)</div>
+      <div class="hero-big-number" id="heroTotalLoss">0원</div>
+    </div>
+    <div class="hero-sub-row">
+      <div class="hero-sub-item">
+        <div class="hero-sub-label">총 회수 현금</div>
+        <div class="hero-sub-val" id="heroTotalCash" style="color: var(--accent);">0원</div>
+      </div>
+      <div class="hero-sub-item">
+        <div class="hero-sub-label">총 매매 체결건수</div>
+        <div class="hero-sub-val" id="heroTotalCount">0건</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 카톡 알림 입력창 -->
   <div class="card">
     <div class="input-header">
       <span style="font-weight: 600; font-size: 0.95rem;">📲 체결 알림 붙여넣기</span>
@@ -82,18 +130,14 @@
         <input type="date" id="tradeDateInput" />
       </div>
     </div>
-    <textarea id="kakaoInput" placeholder="카카오톡 체결 알림톡을 복사해서 붙여넣으세요..."></textarea>
-    <button class="action-btn" onclick="parseAndRecord()">대시보드에 즉시 반영</button>
+    <textarea id="kakaoInput" placeholder="카카오톡 알림톡을 복사해서 붙여넣으세요..."></textarea>
+    <button class="action-btn" onclick="parseAndRecord()">대시보드에 즉시 반영 (동일일자 자동병합)</button>
   </div>
 
   <!-- 보유 종목 카드 -->
   <div class="card">
     <div style="font-weight: 600; margin-bottom: 8px; font-size: 0.95rem;">📌 보유 종목 현황 (클릭 시 해당 종목 장부 이동)</div>
     <div class="summary-grid" id="portfolioCards"></div>
-    <div style="font-size: 0.82rem; color: var(--text-sub);">
-      전체 누적 회수현금: <span id="totalCash" style="color: var(--accent); font-weight: bold;">0원</span> | 
-      전체 누적 확정손익: <span id="totalLoss" style="color: var(--sell); font-weight: bold;">0원</span>
-    </div>
   </div>
 
   <!-- 체결 장부 -->
@@ -121,7 +165,7 @@
   <!-- 종목 등록/수정 모달 -->
   <div id="editModal">
     <div class="modal-box">
-      <h3 id="modalTitle" style="font-size: 1rem; margin-bottom: 12px;">종목 정보 등록</h3>
+      <h3 id="modalTitle" style="font-size: 1rem; margin-bottom: 12px;">종목 정보 등록/수정</h3>
       <div class="form-group">
         <label>종목명</label>
         <input type="text" id="mStockName" placeholder="예: 삼성생명" />
@@ -166,27 +210,32 @@
 
     let appData = null;
 
-    // 안전한 스토리지 로드
+    // 기존 저장된 데이터(이전 버전 키 포함) 절대 유실 없이 안전 복원
     function loadData() {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        let saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v5");
+        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v4");
+        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v3");
+        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v2");
+        if (!saved) saved = localStorage.getItem("stock_dashboard_data");
+
         if (saved) {
           appData = JSON.parse(saved);
         } else {
           appData = JSON.parse(JSON.stringify(defaultData));
         }
       } catch (e) {
-        console.warn("Storage access failed, using memory:", e);
+        console.warn("로컬스토리지 로드 실패:", e);
         appData = JSON.parse(JSON.stringify(defaultData));
       }
     }
 
-    // 안전한 스토리지 저장
     function saveData() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
       } catch (e) {
-        alert("⚠️ 주의: Safari '개인정보 보호 브라우징' 모드에서는 저장이 유지되지 않을 수 있습니다. 일반 탭에서 열어주세요.");
+        alert("⚠️ 저장소 오류: 사파리 '개인정보 보호 브라우징'을 끄고 일반 탭에서 접속해주세요.");
       }
       render();
     }
@@ -241,9 +290,8 @@
       const newPrice = parseInt(priceMatch[1].replace(/,/g, ""), 10);
       const targetDate = extractDate(text);
 
-      // 미등록 종목이면 알림 후 기본 등록
       if (!appData.portfolio[name]) {
-        alert(`[${name}] 종목이 대시보드에 신규 감지되었습니다.\n평단가가 0원으로 세팅되므로, 상단 '+종목추가' 또는 카드를 눌러 매수 평단가를 수정해주세요.`);
+        alert(`[${name}] 신규 종목이 등록되었습니다. 상단 [수정]을 눌러 실제 평단가를 입력해주세요.`);
         appData.portfolio[name] = { qty: 0, avgPrice: 0, cash: 0, targetQty: 0 };
       }
 
@@ -346,11 +394,12 @@
     }
 
     function render() {
-      const cards = document.getElementById("portfolioCards");
-      cards.innerHTML = "";
       let totalCash = 0;
       let totalLoss = 0;
 
+      // 1. 보유 종목 카드 렌더링
+      const cards = document.getElementById("portfolioCards");
+      cards.innerHTML = "";
       for (const [name, info] of Object.entries(appData.portfolio)) {
         totalCash += info.cash;
         const isSelected = appData.selectedTab === name ? "active-card" : "";
@@ -358,7 +407,7 @@
           <div class="stat-box ${isSelected}" onclick="selectTab('${name}')">
             <div class="stat-label">
               <span><b>${name}</b></span>
-              <span onclick="event.stopPropagation(); openAddModal('${name}')" style="text-decoration:underline; font-size:0.75rem;">[수정]</span>
+              <span onclick="event.stopPropagation(); openAddModal('${name}')" style="text-decoration:underline; font-size:0.75rem; color:var(--accent);">[수정]</span>
             </div>
             <div class="stat-val">${info.qty}주 <span style="font-size:0.75rem; font-weight:normal; color:var(--text-sub);">/ 평단 ${info.avgPrice.toLocaleString()}원</span></div>
             <div style="font-size:0.75rem; margin-top:4px; color:var(--accent);">회수현금: ${info.cash.toLocaleString()}원 | 목표: ${info.targetQty}주</div>
@@ -366,6 +415,21 @@
         `;
       }
 
+      // 2. 누적 실현손익 합산 계산
+      appData.trades.forEach(t => {
+        if (typeof t.pnl === "number") totalLoss += t.pnl;
+      });
+
+      // 3. 최상단 빅 넘버 카드 갱신
+      const heroEl = document.getElementById("heroTotalLoss");
+      const sign = totalLoss > 0 ? "+" : "";
+      heroEl.innerText = `${sign}${totalLoss.toLocaleString()}원`;
+      heroEl.style.color = totalLoss < 0 ? "var(--sell)" : (totalLoss > 0 ? "var(--buy)" : "var(--text-main)");
+
+      document.getElementById("heroTotalCash").innerText = `${totalCash.toLocaleString()}원`;
+      document.getElementById("heroTotalCount").innerText = `${appData.trades.length}건`;
+
+      // 4. 탭 바 렌더링
       const tabBar = document.getElementById("tabBar");
       const stockNames = ["ALL", ...Object.keys(appData.portfolio)];
       tabBar.innerHTML = stockNames.map(name => {
@@ -374,6 +438,7 @@
         return `<button class="tab-btn ${activeClass}" onclick="selectTab('${name}')">${label}</button>`;
       }).join("");
 
+      // 5. 선택된 탭별 장부 렌더링
       const currentTab = appData.selectedTab || "ALL";
       const filteredTrades = currentTab === "ALL" 
         ? appData.trades 
@@ -387,10 +452,8 @@
         if (t.type === "매도") tabCash += (t.price * t.qty);
       });
 
-      appData.trades.forEach(t => { if (t.pnl) totalLoss += t.pnl; });
-
       const summaryText = currentTab === "ALL"
-        ? `전체 거래건수: <b>${filteredTrades.length}건</b>`
+        ? `전체 거래일자별 기록: <b>${filteredTrades.length}건</b>`
         : `<b>${currentTab}</b> 실현손익: <b style="color:var(--sell)">${tabLoss.toLocaleString()}원</b> | 누적회수금: <b style="color:var(--accent)">${tabCash.toLocaleString()}원</b>`;
       document.getElementById("filterSummary").innerHTML = summaryText;
 
@@ -413,13 +476,10 @@
           `;
         }).join("");
       }
-
-      document.getElementById("totalCash").innerText = totalCash.toLocaleString() + "원";
-      document.getElementById("totalLoss").innerText = totalLoss.toLocaleString() + "원";
     }
 
     function resetData() {
-      if (confirm("초기 데이터로 되돌리시겠습니까?")) {
+      if (confirm("초기 기본값으로 완전히 리셋하시겠습니까?\n(직접 입력하신 내역이 모두 삭제됩니다)")) {
         appData = JSON.parse(JSON.stringify(defaultData));
         saveData();
       }
