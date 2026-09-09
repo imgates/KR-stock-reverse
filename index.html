@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>프로젝트H · 매매 장부 대시보드</title>
+  <title>프로젝트H · 클라우드 실시간 대시보드</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -18,52 +18,48 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text-main); padding: 16px; max-width: 800px; margin: 0 auto; }
     
-    /* 헤더 */
     .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .top-header h1 { font-size: 1.15rem; font-weight: 700; }
+    .top-header h1 { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .sync-badge { font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; background: #0b1120; border: 1px solid var(--border); }
+    .sync-ok { color: var(--buy); border-color: var(--buy); }
+    .sync-wait { color: #fbbf24; border-color: #fbbf24; }
     
-    /* 최상단 메인 토탈 지표 카드 */
     .hero-stat-card {
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       border: 1px solid #3b82f6;
       border-radius: 14px;
-      padding: 16px;
+      padding: 18px;
       margin-bottom: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
     }
-    .hero-main-group { text-align: center; padding: 6px 0; }
-    .hero-label { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
-    .hero-big-number { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    .hero-main-group { text-align: center; padding: 4px 0 10px 0; }
+    .hero-label { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 4px; }
+    .hero-big-number { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; }
     
     .hero-sub-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       border-top: 1px solid var(--border);
-      padding-top: 10px;
+      padding-top: 12px;
     }
     .hero-sub-item { text-align: center; }
     .hero-sub-label { font-size: 0.75rem; color: var(--text-sub); }
-    .hero-sub-val { font-size: 1.05rem; font-weight: 700; margin-top: 2px; }
+    .hero-sub-val { font-size: 1.1rem; font-weight: 700; margin-top: 2px; }
 
     .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
-    
     .input-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .date-picker-wrap { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text-sub); }
-    .date-picker-wrap input[type="date"] {
-      background: #0b1120; border: 1px solid var(--border); color: #fff; padding: 4px 6px; border-radius: 6px; font-size: 0.82rem;
-    }
+    .date-picker-wrap input[type="date"] { background: #0b1120; border: 1px solid var(--border); color: #fff; padding: 4px 6px; border-radius: 6px; font-size: 0.82rem; }
 
     textarea { width: 100%; height: 85px; background: #0b1120; border: 1px solid var(--border); border-radius: 8px; color: #fff; padding: 10px; font-size: 0.85rem; resize: none; margin-bottom: 8px; }
     button.action-btn { width: 100%; padding: 12px; background: #2563eb; color: #fff; font-size: 0.95rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
     button.action-btn:active { background: #1d4ed8; }
+    button.action-btn:disabled { background: #475569; cursor: not-allowed; }
     
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
     @media (max-width: 500px) { .summary-grid { grid-template-columns: 1fr; } }
-    .stat-box { background: #0b1120; padding: 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; position: relative; }
+    .stat-box { background: #0b1120; padding: 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; }
     .stat-box.active-card { border-color: var(--accent); background: #132238; }
     .stat-label { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 4px; display: flex; justify-content: space-between; }
     .stat-val { font-size: 1.05rem; font-weight: 700; }
@@ -85,9 +81,8 @@
     .btn-row { display: flex; gap: 6px; }
     .sub-btn { background: #1e293b; border: 1px solid var(--border); color: var(--text-sub); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
     
-    /* 모달 */
-    #editModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
-    .modal-box { background: #1e293b; padding: 16px; border-radius: 12px; width: 90%; max-width: 360px; border: 1px solid var(--border); }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: #1e293b; padding: 18px; border-radius: 12px; width: 90%; max-width: 380px; border: 1px solid var(--border); }
     .form-group { margin-bottom: 10px; }
     .form-group label { display: block; font-size: 0.78rem; color: var(--text-sub); margin-bottom: 4px; }
     .form-group input { width: 100%; padding: 8px; background: #0b1120; border: 1px solid var(--border); color: #fff; border-radius: 6px; }
@@ -96,17 +91,21 @@
 <body>
 
   <div class="top-header">
-    <h1>📊 프로젝트H 매매 대시보드</h1>
+    <h1>
+      <span>📊 프로젝트H</span>
+      <span class="sync-badge sync-wait" id="syncStatus">동기화 대기</span>
+    </h1>
     <div class="btn-row">
+      <button class="sub-btn" onclick="openTokenModal()">🔑 토큰설정</button>
+      <button class="sub-btn" onclick="fetchFromGitHub()">🔄 새로고침</button>
       <button class="sub-btn" onclick="openAddModal()">+ 종목추가</button>
-      <button class="sub-btn" onclick="resetData()">초기화</button>
     </div>
   </div>
 
-  <!-- ⭐ [신설] 최상단 단일 빅 넘버 실현손익 카드 -->
+  <!-- 최상단 단일 빅 넘버 실현손익 카드 -->
   <div class="hero-stat-card">
     <div class="hero-main-group">
-      <div class="hero-label">💰 총 누적 실현손익 (전 종목 합산)</div>
+      <div class="hero-label">💰 총 누적 실현손익 (GitHub 실시간 동기화)</div>
       <div class="hero-big-number" id="heroTotalLoss">0원</div>
     </div>
     <div class="hero-sub-row">
@@ -130,8 +129,8 @@
         <input type="date" id="tradeDateInput" />
       </div>
     </div>
-    <textarea id="kakaoInput" placeholder="카카오톡 알림톡을 복사해서 붙여넣으세요..."></textarea>
-    <button class="action-btn" onclick="parseAndRecord()">대시보드에 즉시 반영 (동일일자 자동병합)</button>
+    <textarea id="kakaoInput" placeholder="카카오톡 체결 알림톡 전문을 복사해서 붙여넣으세요..."></textarea>
+    <button class="action-btn" id="submitBtn" onclick="parseAndRecord()">GitHub 클라우드에 즉시 저장</button>
   </div>
 
   <!-- 보유 종목 카드 -->
@@ -162,8 +161,26 @@
     </div>
   </div>
 
+  <!-- GitHub 토큰 설정 모달 -->
+  <div class="modal-overlay" id="tokenModal">
+    <div class="modal-box">
+      <h3 style="font-size: 1rem; margin-bottom: 8px;">🔑 GitHub 토큰(PAT) 등록</h3>
+      <p style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 12px; line-height: 1.4;">
+        GitHub API로 실시간 읽기/쓰기를 수행하기 위한 토큰입니다. 이 기기 브라우저에만 암호화 보관됩니다.
+      </p>
+      <div class="form-group">
+        <label>Personal Access Token (classic)</label>
+        <input type="password" id="mPatToken" placeholder="ghp_xxxxxxxxxxxx" />
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 14px;">
+        <button class="action-btn" style="padding: 8px;" onclick="saveToken()">저장 및 연결</button>
+        <button class="sub-btn" style="flex: 1; padding: 8px;" onclick="closeModal('tokenModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 종목 등록/수정 모달 -->
-  <div id="editModal">
+  <div class="modal-overlay" id="editModal">
     <div class="modal-box">
       <h3 id="modalTitle" style="font-size: 1rem; margin-bottom: 12px;">종목 정보 등록/수정</h3>
       <div class="form-group">
@@ -183,69 +200,128 @@
         <input type="number" id="mTargetQty" placeholder="예: 2" />
       </div>
       <div style="display: flex; gap: 8px; margin-top: 14px;">
-        <button class="action-btn" style="padding: 8px;" onclick="saveModalStock()">저장</button>
-        <button class="sub-btn" style="flex: 1; padding: 8px;" onclick="closeModal()">취소</button>
+        <button class="action-btn" style="padding: 8px;" onclick="saveModalStock()">GitHub에 저장</button>
+        <button class="sub-btn" style="flex: 1; padding: 8px;" onclick="closeModal('editModal')">취소</button>
       </div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = "KR_STOCK_DASHBOARD_DATA";
+    const GITHUB_OWNER = "imgates";
+    const GITHUB_REPO = "KR-stock-reverse";
+    const DATA_FILE_PATH = "data.json";
 
-    const defaultData = {
+    let currentFileSha = null;
+    let appData = {
       selectedTab: "ALL",
-      portfolio: {
-        "SK하이닉스": { qty: 12, avgPrice: 2468866, cash: 5222000, targetQty: 3 },
-        "SK스퀘어": { qty: 7, avgPrice: 1848188, cash: 4317000, targetQty: 2 }
-      },
-      trades: [
-        { date: "09.08", type: "매도", name: "SK하이닉스", qty: 1, price: 1842000, pnl: -626866 },
-        { date: "09.08", type: "매도", name: "SK스퀘어", qty: 1, price: 1162000, pnl: -686188 },
-        { date: "09.07", type: "매도", name: "SK하이닉스", qty: 1, price: 1735000, pnl: -733866 },
-        { date: "09.07", type: "매도", name: "SK스퀘어", qty: 1, price: 1100000, pnl: -748188 },
-        { date: "09.04", type: "매도", name: "SK스퀘어", qty: 2, price: 1027500, pnl: -1641376 },
-        { date: "09.04", type: "매도", name: "SK하이닉스", qty: 1, price: 1645000, pnl: -823866 }
-      ]
+      portfolio: {},
+      trades: []
     };
 
-    let appData = null;
+    function getStoredToken() {
+      return localStorage.getItem("GH_SYNC_PAT_TOKEN") || "";
+    }
 
-    // 기존 저장된 데이터(이전 버전 키 포함) 절대 유실 없이 안전 복원
-    function loadData() {
+    function setSyncStatus(text, statusClass) {
+      const el = document.getElementById("syncStatus");
+      el.innerText = text;
+      el.className = `sync-badge ${statusClass}`;
+    }
+
+    // GitHub data.json 읽기
+    async function fetchFromGitHub() {
+      const token = getStoredToken();
+      if (!token) {
+        setSyncStatus("토큰 필요", "sync-wait");
+        openTokenModal();
+        return;
+      }
+
+      setSyncStatus("동기화 중...", "sync-wait");
+      const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`;
+
       try {
-        let saved = localStorage.getItem(STORAGE_KEY);
-        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v5");
-        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v4");
-        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v3");
-        if (!saved) saved = localStorage.getItem("stock_dashboard_data_v2");
-        if (!saved) saved = localStorage.getItem("stock_dashboard_data");
+        const res = await fetch(url, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json"
+          },
+          cache: "no-store"
+        });
 
-        if (saved) {
-          appData = JSON.parse(saved);
-        } else {
-          appData = JSON.parse(JSON.stringify(defaultData));
+        if (res.status === 401) throw new Error("토큰 인증 실패 (토큰을 재확인하세요)");
+        if (res.status === 404) throw new Error("저장소에 data.json 파일이 없습니다.");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        currentFileSha = data.sha;
+        
+        // UTF-8 디코딩
+        const decodedContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+        appData = JSON.parse(decodedContent);
+        
+        setSyncStatus("클라우드 동기화 완료", "sync-ok");
+        render();
+      } catch (err) {
+        console.error(err);
+        setSyncStatus("동기화 실패", "sync-wait");
+        alert("GitHub 로드 오류: " + err.message);
+      }
+    }
+
+    // GitHub data.json 쓰기 (자동 커밋)
+    async function saveToGitHub(commitMsg = "대시보드 데이터 갱신") {
+      const token = getStoredToken();
+      if (!token) {
+        alert("GitHub 토큰이 등록되어 있지 않습니다.");
+        openTokenModal();
+        return false;
+      }
+
+      setSyncStatus("클라우드 저장 중...", "sync-wait");
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+
+      const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`;
+      
+      try {
+        const jsonStr = JSON.stringify(appData, null, 2);
+        const encodedContent = btoa(unescape(encodeURIComponent(jsonStr)));
+
+        const payload = {
+          message: commitMsg,
+          content: encodedContent,
+          sha: currentFileSha
+        };
+
+        const res = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errRes = await res.json();
+          throw new Error(errRes.message || "저장 실패");
         }
-      } catch (e) {
-        console.warn("로컬스토리지 로드 실패:", e);
-        appData = JSON.parse(JSON.stringify(defaultData));
-      }
-    }
 
-    function saveData() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-      } catch (e) {
-        alert("⚠️ 저장소 오류: 사파리 '개인정보 보호 브라우징'을 끄고 일반 탭에서 접속해주세요.");
+        const result = await res.json();
+        currentFileSha = result.content.sha;
+        setSyncStatus("클라우드 동기화 완료", "sync-ok");
+        btn.disabled = false;
+        render();
+        return true;
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        setSyncStatus("저장 실패", "sync-wait");
+        alert("저장 오류 (새로고침 후 다시 시도해보세요): " + err.message);
+        return false;
       }
-      render();
-    }
-
-    function initDatePicker() {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      document.getElementById("tradeDateInput").value = `${yyyy}-${mm}-${dd}`;
     }
 
     function extractDate(text) {
@@ -271,7 +347,7 @@
       return `${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
     }
 
-    function parseAndRecord() {
+    async function parseAndRecord() {
       const text = document.getElementById("kakaoInput").value;
       if (!text.trim()) return alert("메시지를 입력해주세요.");
 
@@ -281,7 +357,7 @@
       const priceMatch = text.match(/체결단가\s*:\s*([0-9,]+)원/);
 
       if (!nameMatch || !typeMatch || !qtyMatch || !priceMatch) {
-        return alert("알림톡 형식을 인식하지 못했습니다.");
+        return alert("알림톡 포맷(종목명, 체결종류, 체결수량, 체결단가)을 찾을 수 없습니다.");
       }
 
       const name = nameMatch[1].trim();
@@ -291,7 +367,7 @@
       const targetDate = extractDate(text);
 
       if (!appData.portfolio[name]) {
-        alert(`[${name}] 신규 종목이 등록되었습니다. 상단 [수정]을 눌러 실제 평단가를 입력해주세요.`);
+        alert(`[${name}] 신규 종목이 등록되었습니다. 평단가를 정확히 맞추려면 상단 [수정]을 눌러주세요.`);
         appData.portfolio[name] = { qty: 0, avgPrice: 0, cash: 0, targetQty: 0 };
       }
 
@@ -318,7 +394,6 @@
         existing.price = Math.round(combinedAmount / combinedQty);
         existing.qty = combinedQty;
         existing.pnl += newPnl;
-        alert(`[${name}] ${targetDate} 내역과 병합되었습니다.\n총 ${combinedQty}주 / 평단 ${existing.price.toLocaleString()}원`);
       } else {
         appData.trades.unshift({
           date: targetDate,
@@ -329,17 +404,33 @@
           pnl: newPnl
         });
         appData.trades.sort((a, b) => b.date.localeCompare(a.date));
-        alert(`[${name}] ${targetDate} ${type} ${newQty}주 반영 완료!`);
       }
 
       appData.selectedTab = name;
-      document.getElementById("kakaoInput").value = "";
-      saveData();
+
+      const ok = await saveToGitHub(`[${name}] ${targetDate} ${type} ${newQty}주 체결 반영`);
+      if (ok) {
+        document.getElementById("kakaoInput").value = "";
+        alert(`[${name}] ${targetDate}자 ${type} ${newQty}주가 GitHub 클라우드에 영구 저장되었습니다!\n다른 기기나 브라우저에서도 즉시 동일하게 반영됩니다.`);
+      }
     }
 
     function selectTab(name) {
       appData.selectedTab = name;
-      saveData();
+      render();
+    }
+
+    function openTokenModal() {
+      document.getElementById("mPatToken").value = getStoredToken();
+      document.getElementById("tokenModal").style.display = "flex";
+    }
+
+    function saveToken() {
+      const token = document.getElementById("mPatToken").value.trim();
+      if (!token) return alert("토큰을 입력해주세요.");
+      localStorage.setItem("GH_SYNC_PAT_TOKEN", token);
+      closeModal("tokenModal");
+      fetchFromGitHub();
     }
 
     function openAddModal(targetName = "") {
@@ -368,11 +459,11 @@
       modal.style.display = "flex";
     }
 
-    function closeModal() {
-      document.getElementById("editModal").style.display = "none";
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
     }
 
-    function saveModalStock() {
+    async function saveModalStock() {
       const name = document.getElementById("mStockName").value.trim();
       const qty = parseInt(document.getElementById("mQty").value, 10) || 0;
       const price = parseInt(document.getElementById("mAvgPrice").value, 10) || 0;
@@ -388,16 +479,17 @@
         appData.portfolio[name].targetQty = targetQty;
       }
 
-      closeModal();
-      saveData();
-      alert(`[${name}] 정보가 저장되었습니다.`);
+      closeModal("editModal");
+      const ok = await saveToGitHub(`[${name}] 종목 목표치 및 평단가 수정`);
+      if (ok) {
+        alert(`[${name}] 정보가 GitHub 클라우드에 안전하게 저장되었습니다.`);
+      }
     }
 
     function render() {
       let totalCash = 0;
       let totalLoss = 0;
 
-      // 1. 보유 종목 카드 렌더링
       const cards = document.getElementById("portfolioCards");
       cards.innerHTML = "";
       for (const [name, info] of Object.entries(appData.portfolio)) {
@@ -415,12 +507,10 @@
         `;
       }
 
-      // 2. 누적 실현손익 합산 계산
       appData.trades.forEach(t => {
         if (typeof t.pnl === "number") totalLoss += t.pnl;
       });
 
-      // 3. 최상단 빅 넘버 카드 갱신
       const heroEl = document.getElementById("heroTotalLoss");
       const sign = totalLoss > 0 ? "+" : "";
       heroEl.innerText = `${sign}${totalLoss.toLocaleString()}원`;
@@ -429,7 +519,6 @@
       document.getElementById("heroTotalCash").innerText = `${totalCash.toLocaleString()}원`;
       document.getElementById("heroTotalCount").innerText = `${appData.trades.length}건`;
 
-      // 4. 탭 바 렌더링
       const tabBar = document.getElementById("tabBar");
       const stockNames = ["ALL", ...Object.keys(appData.portfolio)];
       tabBar.innerHTML = stockNames.map(name => {
@@ -438,7 +527,6 @@
         return `<button class="tab-btn ${activeClass}" onclick="selectTab('${name}')">${label}</button>`;
       }).join("");
 
-      // 5. 선택된 탭별 장부 렌더링
       const currentTab = appData.selectedTab || "ALL";
       const filteredTrades = currentTab === "ALL" 
         ? appData.trades 
@@ -453,7 +541,7 @@
       });
 
       const summaryText = currentTab === "ALL"
-        ? `전체 거래일자별 기록: <b>${filteredTrades.length}건</b>`
+        ? `전체 체결일자별 기록: <b>${filteredTrades.length}건</b>`
         : `<b>${currentTab}</b> 실현손익: <b style="color:var(--sell)">${tabLoss.toLocaleString()}원</b> | 누적회수금: <b style="color:var(--accent)">${tabCash.toLocaleString()}원</b>`;
       document.getElementById("filterSummary").innerHTML = summaryText;
 
@@ -478,16 +566,16 @@
       }
     }
 
-    function resetData() {
-      if (confirm("초기 기본값으로 완전히 리셋하시겠습니까?\n(직접 입력하신 내역이 모두 삭제됩니다)")) {
-        appData = JSON.parse(JSON.stringify(defaultData));
-        saveData();
-      }
+    function initDatePicker() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      document.getElementById("tradeDateInput").value = `${yyyy}-${mm}-${dd}`;
     }
 
-    loadData();
     initDatePicker();
-    render();
+    fetchFromGitHub();
   </script>
 </body>
 </html>
