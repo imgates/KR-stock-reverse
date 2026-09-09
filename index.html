@@ -96,6 +96,7 @@
       <span class="sync-badge sync-wait" id="syncStatus">동기화 대기</span>
     </h1>
     <div class="btn-row">
+      <button class="sub-btn" onclick="recalcAllAndSave()" style="color:var(--accent); border-color:var(--accent);">⚡ 손익재계산</button>
       <button class="sub-btn" onclick="openTokenModal()">🔑 토큰설정</button>
       <button class="sub-btn" onclick="fetchFromGitHub()">🔄 새로고침</button>
       <button class="sub-btn" onclick="openAddModal()">+ 종목추가</button>
@@ -200,7 +201,7 @@
         <input type="number" id="mTargetQty" placeholder="예: 2" />
       </div>
       <div style="display: flex; gap: 8px; margin-top: 14px;">
-        <button class="action-btn" style="padding: 8px;" onclick="saveModalStock()">GitHub에 저장</button>
+        <button class="action-btn" style="padding: 8px;" onclick="saveModalStock()">GitHub에 저장 & 장부 재계산</button>
         <button class="sub-btn" style="flex: 1; padding: 8px;" onclick="closeModal('editModal')">취소</button>
       </div>
     </div>
@@ -228,7 +229,6 @@
       el.className = `sync-badge ${statusClass}`;
     }
 
-    // GitHub data.json 읽기 (안전 방어 로직 탑재)
     async function fetchFromGitHub() {
       const token = getStoredToken();
       if (!token) {
@@ -256,11 +256,9 @@
         const data = await res.json();
         currentFileSha = data.sha;
         
-        // Base64 UTF-8 디코딩
         const decodedContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
         const parsed = JSON.parse(decodedContent);
 
-        // 핵심 방어 코드: null/undefined 방지
         appData = {
           selectedTab: parsed.selectedTab || "ALL",
           portfolio: (parsed.portfolio && typeof parsed.portfolio === "object") ? parsed.portfolio : {},
@@ -276,7 +274,6 @@
       }
     }
 
-    // GitHub data.json 쓰기
     async function saveToGitHub(commitMsg = "대시보드 데이터 갱신") {
       const token = getStoredToken();
       if (!token) {
@@ -326,9 +323,28 @@
         console.error(err);
         btn.disabled = false;
         setSyncStatus("저장 실패", "sync-wait");
-        alert("저장 오류 (새로고침 후 다시 시도해보세요): " + err.message);
+        alert("저장 오류: " + err.message);
         return false;
       }
+    }
+
+    // 종목별 설정 평단가 기준으로 모든 과거 장부 손익 재계산
+    function recalculatePnL() {
+      if (!appData.trades || !appData.portfolio) return;
+      appData.trades.forEach(t => {
+        if (t.type === "매도") {
+          const p = appData.portfolio[t.name];
+          if (p && p.avgPrice > 0) {
+            t.pnl = (t.price - p.avgPrice) * t.qty;
+          }
+        }
+      });
+    }
+
+    async function recalcAllAndSave() {
+      recalculatePnL();
+      const ok = await saveToGitHub("종목 평단가 기준 전체 실현손익 일괄 재계산");
+      if (ok) alert("설정된 종목 평단가를 기준으로 전체 장부의 실현손실/손익이 올바르게 재계산되었습니다!");
     }
 
     function extractDate(text) {
@@ -364,7 +380,7 @@
       const priceMatch = text.match(/체결단가\s*:\s*([0-9,]+)원/);
 
       if (!nameMatch || !typeMatch || !qtyMatch || !priceMatch) {
-        return alert("알림톡 포맷(종목명, 체결종류, 체결수량, 체결단가)을 찾을 수 없습니다.");
+        return alert("알림톡 포맷을 찾을 수 없습니다.");
       }
 
       const name = nameMatch[1].trim();
@@ -374,7 +390,7 @@
       const targetDate = extractDate(text);
 
       if (!appData.portfolio[name]) {
-        alert(`[${name}] 신규 종목이 등록되었습니다. 평단가를 맞추려면 상단 [수정]을 눌러주세요.`);
+        alert(`[${name}] 신규 종목이 등록되었습니다. 평단가를 정확히 맞추려면 상단 [수정]을 눌러주세요.`);
         appData.portfolio[name] = { qty: 0, avgPrice: 0, cash: 0, targetQty: 0 };
       }
 
@@ -382,14 +398,14 @@
       let newPnl = 0;
 
       if (type === "매도") {
-        newPnl = (newPrice - target.avgPrice) * newQty;
+        newPnl = (newPrice - (target.avgPrice || 0)) * newQty;
         target.qty = Math.max(0, target.qty - newQty);
-        target.cash += (newPrice * newQty);
+        target.cash = (target.cash || 0) + (newPrice * newQty);
       } else {
         const totalCost = (target.qty * target.avgPrice) + (newQty * newPrice);
         target.qty += newQty;
         target.avgPrice = Math.round(totalCost / target.qty);
-        target.cash = Math.max(0, target.cash - (newPrice * newQty));
+        target.cash = Math.max(0, (target.cash || 0) - (newPrice * newQty));
       }
 
       const existingIndex = appData.trades.findIndex(t => t.date === targetDate && t.name === name && t.type === type);
@@ -400,7 +416,7 @@
         const combinedAmount = (existing.price * existing.qty) + (newPrice * newQty);
         existing.price = Math.round(combinedAmount / combinedQty);
         existing.qty = combinedQty;
-        existing.pnl += newPnl;
+        existing.pnl = (existing.price - (target.avgPrice || 0)) * combinedQty;
       } else {
         appData.trades.unshift({
           date: targetDate,
@@ -418,7 +434,7 @@
       const ok = await saveToGitHub(`[${name}] ${targetDate} ${type} ${newQty}주 체결 반영`);
       if (ok) {
         document.getElementById("kakaoInput").value = "";
-        alert(`[${name}] ${targetDate}자 ${type} ${newQty}주가 GitHub에 영구 저장되었습니다!\n다른 기기에서도 동일하게 반영됩니다.`);
+        alert(`[${name}] 체결이 반영되었습니다.`);
       }
     }
 
@@ -486,10 +502,13 @@
         appData.portfolio[name].targetQty = targetQty;
       }
 
+      // 평단가 수정 시 장부 전체 실현손익 자동 소급 재계산
+      recalculatePnL();
+
       closeModal("editModal");
-      const ok = await saveToGitHub(`[${name}] 종목 목표치 및 평단가 수정`);
+      const ok = await saveToGitHub(`[${name}] 종목 평단가(${price}원) 수정 및 장부 손익 재계산`);
       if (ok) {
-        alert(`[${name}] 정보가 GitHub 클라우드에 안전하게 저장되었습니다.`);
+        alert(`[${name}] 수정된 평단가를 기준으로 장부 실현손실이 올바르게 갱신되었습니다.`);
       }
     }
 
@@ -553,7 +572,7 @@
 
       const summaryText = currentTab === "ALL"
         ? `전체 체결일자별 기록: <b>${filteredTrades.length}건</b>`
-        : `<b>${currentTab}</b> 실현손익: <b style="color:var(--sell)">${tabLoss.toLocaleString()}원</b> | 누적회수금: <b style="color:var(--accent)">${tabCash.toLocaleString()}원</b>`;
+        : `<b>${currentTab}</b> 실현손익: <b style="color:${tabLoss < 0 ? 'var(--sell)' : 'var(--buy)'}">${tabLoss.toLocaleString()}원</b> | 누적회수금: <b style="color:var(--accent)">${tabCash.toLocaleString()}원</b>`;
       document.getElementById("filterSummary").innerHTML = summaryText;
 
       const history = document.getElementById("tradeHistory");
@@ -570,7 +589,7 @@
               <td><b>${t.name}</b></td>
               <td><b>${t.qty}주</b></td>
               <td>${(t.price || 0).toLocaleString()}원</td>
-              <td style="color: ${pnlColor}">${t.pnl ? t.pnl.toLocaleString() + '원' : '-'}</td>
+              <td style="color: ${pnlColor}; font-weight:600;">${t.pnl ? t.pnl.toLocaleString() + '원' : '-'}</td>
             </tr>
           `;
         }).join("");
