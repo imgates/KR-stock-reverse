@@ -1,5 +1,5 @@
 {
-  "selectedTab": "KoAct 미국나스닥성장기업액티브",
+  "selectedTab": "삼성전자",
   "portfolio": {
     "SK하이닉스": {
       "qty": 12,
@@ -14,7 +14,7 @@
       "targetQty": 2
     },
     "TIGER 미국필라델피아반도체나스닥": {
-      "qty": 97,
+      "qty": 0,
       "avgPrice": 47684,
       "cash": 953755,
       "targetQty": 0
