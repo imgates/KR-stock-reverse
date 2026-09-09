@@ -102,7 +102,7 @@
     </div>
   </div>
 
-  <!-- 최상단 단일 빅 넘버 실현손익 카드 -->
+  <!-- 최상단 빅 넘버 실현손익 카드 -->
   <div class="hero-stat-card">
     <div class="hero-main-group">
       <div class="hero-label">💰 총 누적 실현손익 (GitHub 실시간 동기화)</div>
@@ -161,7 +161,7 @@
     </div>
   </div>
 
-  <!-- GitHub 토큰 설정 모달 -->
+  <!-- 토큰 모달 -->
   <div class="modal-overlay" id="tokenModal">
     <div class="modal-box">
       <h3 style="font-size: 1rem; margin-bottom: 8px;">🔑 GitHub 토큰(PAT) 등록</h3>
@@ -219,7 +219,7 @@
     };
 
     function getStoredToken() {
-      return localStorage.getItem("GH_SYNC_PAT_TOKEN") || "";
+      return (localStorage.getItem("GH_SYNC_PAT_TOKEN") || "").trim();
     }
 
     function setSyncStatus(text, statusClass) {
@@ -228,7 +228,7 @@
       el.className = `sync-badge ${statusClass}`;
     }
 
-    // GitHub data.json 읽기
+    // GitHub data.json 읽기 (안전 방어 로직 탑재)
     async function fetchFromGitHub() {
       const token = getStoredToken();
       if (!token) {
@@ -256,9 +256,16 @@
         const data = await res.json();
         currentFileSha = data.sha;
         
-        // UTF-8 디코딩
+        // Base64 UTF-8 디코딩
         const decodedContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-        appData = JSON.parse(decodedContent);
+        const parsed = JSON.parse(decodedContent);
+
+        // 핵심 방어 코드: null/undefined 방지
+        appData = {
+          selectedTab: parsed.selectedTab || "ALL",
+          portfolio: (parsed.portfolio && typeof parsed.portfolio === "object") ? parsed.portfolio : {},
+          trades: Array.isArray(parsed.trades) ? parsed.trades : []
+        };
         
         setSyncStatus("클라우드 동기화 완료", "sync-ok");
         render();
@@ -269,7 +276,7 @@
       }
     }
 
-    // GitHub data.json 쓰기 (자동 커밋)
+    // GitHub data.json 쓰기
     async function saveToGitHub(commitMsg = "대시보드 데이터 갱신") {
       const token = getStoredToken();
       if (!token) {
@@ -367,7 +374,7 @@
       const targetDate = extractDate(text);
 
       if (!appData.portfolio[name]) {
-        alert(`[${name}] 신규 종목이 등록되었습니다. 평단가를 정확히 맞추려면 상단 [수정]을 눌러주세요.`);
+        alert(`[${name}] 신규 종목이 등록되었습니다. 평단가를 맞추려면 상단 [수정]을 눌러주세요.`);
         appData.portfolio[name] = { qty: 0, avgPrice: 0, cash: 0, targetQty: 0 };
       }
 
@@ -411,7 +418,7 @@
       const ok = await saveToGitHub(`[${name}] ${targetDate} ${type} ${newQty}주 체결 반영`);
       if (ok) {
         document.getElementById("kakaoInput").value = "";
-        alert(`[${name}] ${targetDate}자 ${type} ${newQty}주가 GitHub 클라우드에 영구 저장되었습니다!\n다른 기기나 브라우저에서도 즉시 동일하게 반영됩니다.`);
+        alert(`[${name}] ${targetDate}자 ${type} ${newQty}주가 GitHub에 영구 저장되었습니다!\n다른 기기에서도 동일하게 반영됩니다.`);
       }
     }
 
@@ -492,8 +499,11 @@
 
       const cards = document.getElementById("portfolioCards");
       cards.innerHTML = "";
-      for (const [name, info] of Object.entries(appData.portfolio)) {
-        totalCash += info.cash;
+      
+      const portfolioObj = appData.portfolio || {};
+      for (const [name, info] of Object.entries(portfolioObj)) {
+        if (!info) continue;
+        totalCash += (info.cash || 0);
         const isSelected = appData.selectedTab === name ? "active-card" : "";
         cards.innerHTML += `
           <div class="stat-box ${isSelected}" onclick="selectTab('${name}')">
@@ -501,13 +511,14 @@
               <span><b>${name}</b></span>
               <span onclick="event.stopPropagation(); openAddModal('${name}')" style="text-decoration:underline; font-size:0.75rem; color:var(--accent);">[수정]</span>
             </div>
-            <div class="stat-val">${info.qty}주 <span style="font-size:0.75rem; font-weight:normal; color:var(--text-sub);">/ 평단 ${info.avgPrice.toLocaleString()}원</span></div>
-            <div style="font-size:0.75rem; margin-top:4px; color:var(--accent);">회수현금: ${info.cash.toLocaleString()}원 | 목표: ${info.targetQty}주</div>
+            <div class="stat-val">${info.qty || 0}주 <span style="font-size:0.75rem; font-weight:normal; color:var(--text-sub);">/ 평단 ${(info.avgPrice || 0).toLocaleString()}원</span></div>
+            <div style="font-size:0.75rem; margin-top:4px; color:var(--accent);">회수현금: ${(info.cash || 0).toLocaleString()}원 | 목표: ${info.targetQty || 0}주</div>
           </div>
         `;
       }
 
-      appData.trades.forEach(t => {
+      const tradesArr = Array.isArray(appData.trades) ? appData.trades : [];
+      tradesArr.forEach(t => {
         if (typeof t.pnl === "number") totalLoss += t.pnl;
       });
 
@@ -517,10 +528,10 @@
       heroEl.style.color = totalLoss < 0 ? "var(--sell)" : (totalLoss > 0 ? "var(--buy)" : "var(--text-main)");
 
       document.getElementById("heroTotalCash").innerText = `${totalCash.toLocaleString()}원`;
-      document.getElementById("heroTotalCount").innerText = `${appData.trades.length}건`;
+      document.getElementById("heroTotalCount").innerText = `${tradesArr.length}건`;
 
       const tabBar = document.getElementById("tabBar");
-      const stockNames = ["ALL", ...Object.keys(appData.portfolio)];
+      const stockNames = ["ALL", ...Object.keys(portfolioObj)];
       tabBar.innerHTML = stockNames.map(name => {
         const label = name === "ALL" ? "전체보기" : name;
         const activeClass = appData.selectedTab === name ? "active" : "";
@@ -529,8 +540,8 @@
 
       const currentTab = appData.selectedTab || "ALL";
       const filteredTrades = currentTab === "ALL" 
-        ? appData.trades 
-        : appData.trades.filter(t => t.name === currentTab);
+        ? tradesArr 
+        : tradesArr.filter(t => t.name === currentTab);
 
       let tabLoss = 0;
       let tabCash = 0;
@@ -558,7 +569,7 @@
               <td><span class="badge ${badgeClass}">${t.type}</span></td>
               <td><b>${t.name}</b></td>
               <td><b>${t.qty}주</b></td>
-              <td>${t.price.toLocaleString()}원</td>
+              <td>${(t.price || 0).toLocaleString()}원</td>
               <td style="color: ${pnlColor}">${t.pnl ? t.pnl.toLocaleString() + '원' : '-'}</td>
             </tr>
           `;
