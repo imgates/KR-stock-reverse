@@ -1,5 +1,5 @@
 {
-  "selectedTab": "TIGER 미국필라델피아반도체나스닥",
+  "selectedTab": "PLUS 코스피50",
   "portfolio": {
     "SK하이닉스": {
       "qty": 12,
@@ -22,11 +22,19 @@
     "PLUS 코스피50": {
       "qty": 0,
       "avgPrice": 0,
-      "cash": 246465,
+      "cash": 501765,
       "targetQty": 0
     }
   },
   "trades": [
+    {
+      "date": "09.08",
+      "type": "매도",
+      "name": "PLUS 코스피50",
+      "qty": 3,
+      "price": 85100,
+      "pnl": 255300
+    },
     {
       "date": "09.08",
       "type": "매도",
