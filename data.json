@@ -1,15 +1,81 @@
 {
-  "selectedTab": "ALL",
+  "selectedTab": "TIGER 미국필라델피아반도체나스닥",
   "portfolio": {
-    "SK하이닉스": { "qty": 12, "avgPrice": 2468866, "cash": 5222000, "targetQty": 3 },
-    "SK스퀘어": { "qty": 7, "avgPrice": 1848188, "cash": 4317000, "targetQty": 2 }
+    "SK하이닉스": {
+      "qty": 12,
+      "avgPrice": 2468866,
+      "cash": 5222000,
+      "targetQty": 3
+    },
+    "SK스퀘어": {
+      "qty": 7,
+      "avgPrice": 1848188,
+      "cash": 4317000,
+      "targetQty": 2
+    },
+    "TIGER 미국필라델피아반도체나스닥": {
+      "qty": 0,
+      "avgPrice": 0,
+      "cash": 122955,
+      "targetQty": 0
+    }
   },
   "trades": [
-    { "date": "09.08", "type": "매도", "name": "SK하이닉스", "qty": 1, "price": 1842000, "pnl": -626866 },
-    { "date": "09.08", "type": "매도", "name": "SK스퀘어", "qty": 1, "price": 1162000, "pnl": -686188 },
-    { "date": "09.07", "type": "매도", "name": "SK하이닉스", "qty": 1, "price": 1735000, "pnl": -733866 },
-    { "date": "09.07", "type": "매도", "name": "SK스퀘어", "qty": 1, "price": 1100000, "pnl": -748188 },
-    { "date": "09.04", "type": "매도", "name": "SK스퀘어", "qty": 2, "price": 1027500, "pnl": -1641376 },
-    { "date": "09.04", "type": "매도", "name": "SK하이닉스", "qty": 1, "price": 1645000, "pnl": -823866 }
+    {
+      "date": "09.08",
+      "type": "매도",
+      "name": "SK하이닉스",
+      "qty": 1,
+      "price": 1842000,
+      "pnl": -626866
+    },
+    {
+      "date": "09.08",
+      "type": "매도",
+      "name": "SK스퀘어",
+      "qty": 1,
+      "price": 1162000,
+      "pnl": -686188
+    },
+    {
+      "date": "09.07",
+      "type": "매도",
+      "name": "TIGER 미국필라델피아반도체나스닥",
+      "qty": 3,
+      "price": 40985,
+      "pnl": 122955
+    },
+    {
+      "date": "09.07",
+      "type": "매도",
+      "name": "SK하이닉스",
+      "qty": 1,
+      "price": 1735000,
+      "pnl": -733866
+    },
+    {
+      "date": "09.07",
+      "type": "매도",
+      "name": "SK스퀘어",
+      "qty": 1,
+      "price": 1100000,
+      "pnl": -748188
+    },
+    {
+      "date": "09.04",
+      "type": "매도",
+      "name": "SK스퀘어",
+      "qty": 2,
+      "price": 1027500,
+      "pnl": -1641376
+    },
+    {
+      "date": "09.04",
+      "type": "매도",
+      "name": "SK하이닉스",
+      "qty": 1,
+      "price": 1645000,
+      "pnl": -823866
+    }
   ]
 }
