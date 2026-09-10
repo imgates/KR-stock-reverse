@@ -41,17 +41,9 @@
   "trades": [
     {
       "date": "09.10",
-      "type": "매수",
-      "name": "PLUS 코스피50",
-      "qty": 3,
-      "price": 84265,
-      "pnl": 0
-    },
-    {
-      "date": "09.10",
       "type": "매도",
       "name": "PLUS 코스피50",
-      "qty": 6,
+      "qty": 3,
       "price": 84265,
       "pnl": -96588
     },
