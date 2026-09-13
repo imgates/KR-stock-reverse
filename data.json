@@ -1,5 +1,5 @@
 {
-  "selectedTab": "PLUS 코스피50",
+  "selectedTab": "삼성전자",
   "portfolio": {
     "SK하이닉스": {
       "qty": 12,
@@ -34,7 +34,7 @@
     "삼성전자": {
       "qty": 0,
       "avgPrice": 331954,
-      "cash": 548000,
+      "cash": 1096000,
       "targetQty": 0
     }
   },
@@ -46,6 +46,14 @@
       "qty": 2,
       "price": 81783,
       "pnl": 0
+    },
+    {
+      "date": "09.10",
+      "type": "매도",
+      "name": "삼성전자",
+      "qty": 2,
+      "price": 274000,
+      "pnl": -115908
     },
     {
       "date": "09.10",
