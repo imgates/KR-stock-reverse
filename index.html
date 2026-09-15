@@ -216,7 +216,7 @@
     const LOCAL_BACKUP_KEY = "PROJECT_H_SAFE_BACKUP";
 
     let currentFileSha = null;
-    let isDataLoaded = false; // 안전 잠금장치: 정상 로딩 전에는 쓰기 작업 원천 차단
+    let isDataLoaded = false;
     let appData = {
       selectedTab: "ALL",
       portfolio: {},
@@ -273,14 +273,13 @@
         const decodedContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
         const parsed = JSON.parse(decodedContent);
 
-        // 만약 GitHub에 저장된 파일 내용이 비어있다면, 로컬 백업 확인
         const hasPortfolio = parsed.portfolio && Object.keys(parsed.portfolio).length > 0;
         const hasTrades = Array.isArray(parsed.trades) && parsed.trades.length > 0;
 
         if (!hasPortfolio && !hasTrades) {
           const localBackup = localStorage.getItem(LOCAL_BACKUP_KEY);
           if (localBackup) {
-            const confirmRestore = confirm("⚠️ GitHub 원격 파일 내용이 비어 있습니다!\n브라우저에 보관된 정상 백업 데이터로 복원하시겠습니까?");
+            const confirmRestore = confirm("⚠️ GitHub 원격 파일 내용이 비어 있습니다!\n브라우저에 보관된 정상 백업본으로 복원하시겠습니까?");
             if (confirmRestore) {
               appData = JSON.parse(localBackup);
               isDataLoaded = true;
@@ -297,7 +296,6 @@
           trades: Array.isArray(parsed.trades) ? parsed.trades : []
         };
         
-        // 정상 데이터인 경우 항상 로컬 비상 백업 갱신
         if (Object.keys(appData.portfolio).length > 0 || appData.trades.length > 0) {
           localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(appData));
         }
@@ -314,18 +312,17 @@
       }
     }
 
-    // 🛡️ 핵심 방어: 빈 데이터 원천 덮어쓰기 차단 로직 탑재
+    // GitHub data.json 쓰기 (최신 SHA 강제 취득 및 빈 데이터 덮어쓰기 방어)
     async function saveToGitHub(commitMsg = "대시보드 데이터 갱신") {
       if (!isDataLoaded) {
         alert("⚠️ 안전 잠금: 데이터를 완전히 불러오기 전에는 저장할 수 없습니다.");
         return false;
       }
 
-      // [안전 검사 1] 데이터가 0건인 상태로 원격 저장 시도 시 강제 차단
       const stockCount = Object.keys(appData.portfolio || {}).length;
       const tradeCount = (appData.trades || []).length;
       if (stockCount === 0 && tradeCount === 0) {
-        alert("🚨 치명적 오류 방지: 저장하려는 데이터가 완전히 비어있습니다. 원격 파일 삭제를 방지하기 위해 저장을 강제 중단합니다.");
+        alert("🚨 치명적 오류 방지: 저장하려는 데이터가 완전히 비어있습니다. 저장을 강제 중단합니다.");
         return false;
       }
 
@@ -343,7 +340,6 @@
       const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`;
       
       try {
-        // [안전 검사 2] 항상 서버의 실시간 최신 SHA를 먼저 확보하여 충돌 방지
         const getRes = await fetch(url + `?t=${Date.now()}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -386,7 +382,6 @@
         setSyncStatus("클라우드 동기화 완료", "sync-ok");
         if (btn) btn.disabled = false;
         
-        // 정상 저장 후 로컬 백업 갱신
         localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(appData));
         render();
         return true;
@@ -399,6 +394,7 @@
       }
     }
 
+    // 종목별 평단가 기준 전체 손익 일괄 재계산 (매수는 무조건 0원 고정)
     function recalculatePnL() {
       if (!appData.trades || !appData.portfolio) return;
       appData.trades.forEach(t => {
@@ -407,6 +403,8 @@
           if (p && p.avgPrice > 0) {
             t.pnl = (t.price - p.avgPrice) * t.qty;
           }
+        } else {
+          t.pnl = 0; // 매수는 손익 발생 없음
         }
       });
     }
@@ -440,6 +438,7 @@
       return `${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
     }
 
+    // 카톡 파싱 및 체결 내역 추가 (매수 시 pnl 오염 방지 적용)
     async function parseAndRecord() {
       if (!isDataLoaded) return alert("데이터를 먼저 동기화한 후 진행해주세요.");
 
@@ -478,6 +477,7 @@
         target.qty += newQty;
         target.avgPrice = Math.round(totalCost / target.qty);
         target.cash = Math.max(0, (target.cash || 0) - (newPrice * newQty));
+        newPnl = 0;
       }
 
       const existingIndex = appData.trades.findIndex(t => t.date === targetDate && t.name === name && t.type === type);
@@ -488,7 +488,7 @@
         const combinedAmount = (existing.price * existing.qty) + (newPrice * newQty);
         existing.price = Math.round(combinedAmount / combinedQty);
         existing.qty = combinedQty;
-        existing.pnl = (existing.price - (target.avgPrice || 0)) * combinedQty;
+        existing.pnl = (type === "매도") ? (existing.price - (target.avgPrice || 0)) * combinedQty : 0;
       } else {
         appData.trades.unshift({
           date: targetDate,
@@ -651,7 +651,15 @@
       } else {
         history.innerHTML = filteredTrades.map(t => {
           const badgeClass = t.type === "매도" ? "badge-sell" : "badge-buy";
-          const pnlColor = t.pnl < 0 ? 'var(--sell)' : (t.pnl > 0 ? 'var(--buy)' : 'inherit');
+          
+          let pnlDisplay = "-";
+          let pnlColor = "inherit";
+          
+          if (t.type === "매도" && typeof t.pnl === "number") {
+            pnlColor = t.pnl < 0 ? 'var(--sell)' : (t.pnl > 0 ? 'var(--buy)' : 'inherit');
+            pnlDisplay = (t.pnl > 0 ? "+" : "") + t.pnl.toLocaleString() + "원";
+          }
+
           return `
             <tr>
               <td class="date-cell">${t.date || '-'}</td>
@@ -659,7 +667,7 @@
               <td><b>${t.name}</b></td>
               <td><b>${t.qty}주</b></td>
               <td>${(t.price || 0).toLocaleString()}원</td>
-              <td style="color: ${pnlColor}; font-weight:600;">${t.pnl ? t.pnl.toLocaleString() + '원' : '-'}</td>
+              <td style="color: ${pnlColor}; font-weight:600;">${pnlDisplay}</td>
             </tr>
           `;
         }).join("");
