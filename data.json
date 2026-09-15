@@ -1,5 +1,5 @@
 {
-  "selectedTab": "PLUS 코스피50",
+  "selectedTab": "KoAct 미국나스닥성장기업액티브",
   "portfolio": {
     "SK하이닉스": {
       "qty": 13,
@@ -26,9 +26,9 @@
       "targetQty": 0
     },
     "KoAct 미국나스닥성장기업액티브": {
-      "qty": 152,
+      "qty": 139,
       "avgPrice": 22942,
-      "cash": 1091410,
+      "cash": 1328595,
       "targetQty": 0
     },
     "삼성전자": {
@@ -86,6 +86,14 @@
       "qty": 3,
       "price": 84265,
       "pnl": -45390
+    },
+    {
+      "date": "09.09",
+      "type": "매도",
+      "name": "KoAct 미국나스닥성장기업액티브",
+      "qty": 13,
+      "price": 18245,
+      "pnl": -61061
     },
     {
       "date": "09.09",
