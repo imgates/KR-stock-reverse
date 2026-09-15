@@ -1,10 +1,10 @@
 {
-  "selectedTab": "SK스퀘어",
+  "selectedTab": "SK하이닉스",
   "portfolio": {
     "SK하이닉스": {
-      "qty": 12,
-      "avgPrice": 2468866,
-      "cash": 5222000,
+      "qty": 13,
+      "avgPrice": 2409492,
+      "cash": 3525000,
       "targetQty": 3
     },
     "SK스퀘어": {
@@ -45,6 +45,14 @@
       "name": "PLUS 코스피50",
       "qty": 1,
       "price": 78800,
+      "pnl": 0
+    },
+    {
+      "date": "09.14",
+      "type": "매수",
+      "name": "SK하이닉스",
+      "qty": 1,
+      "price": 1697000,
       "pnl": 0
     },
     {
