@@ -1,5 +1,5 @@
 {
-  "selectedTab": "PLUS 코스피50",
+  "selectedTab": "SK스퀘어",
   "portfolio": {
     "SK하이닉스": {
       "qty": 12,
@@ -8,9 +8,9 @@
       "targetQty": 3
     },
     "SK스퀘어": {
-      "qty": 7,
-      "avgPrice": 1848188,
-      "cash": 4317000,
+      "qty": 8,
+      "avgPrice": 1741915,
+      "cash": 3319000,
       "targetQty": 2
     },
     "TIGER 미국필라델피아반도체나스닥": {
@@ -45,6 +45,14 @@
       "name": "PLUS 코스피50",
       "qty": 1,
       "price": 78800,
+      "pnl": 0
+    },
+    {
+      "date": "09.14",
+      "type": "매수",
+      "name": "SK스퀘어",
+      "qty": 1,
+      "price": 998000,
       "pnl": 0
     },
     {
