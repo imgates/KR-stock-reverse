@@ -1,5 +1,5 @@
 {
-  "selectedTab": "SK하이닉스",
+  "selectedTab": "PLUS 코스피50",
   "portfolio": {
     "SK하이닉스": {
       "qty": 13,
@@ -20,9 +20,9 @@
       "targetQty": 0
     },
     "PLUS 코스피50": {
-      "qty": 1,
-      "avgPrice": 78800,
-      "cash": 675760,
+      "qty": 2,
+      "avgPrice": 79280,
+      "cash": 596000,
       "targetQty": 0
     },
     "KoAct 미국나스닥성장기업액티브": {
@@ -45,6 +45,14 @@
       "name": "PLUS 코스피50",
       "qty": 1,
       "price": 78800,
+      "pnl": 0
+    },
+    {
+      "date": "09.14",
+      "type": "매수",
+      "name": "PLUS 코스피50",
+      "qty": 1,
+      "price": 79760,
       "pnl": 0
     },
     {
