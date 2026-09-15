@@ -18,11 +18,12 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text-main); padding: 16px; max-width: 800px; margin: 0 auto; }
     
-    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
     .top-header h1 { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
     .sync-badge { font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; background: #0b1120; border: 1px solid var(--border); }
     .sync-ok { color: var(--buy); border-color: var(--buy); }
     .sync-wait { color: #fbbf24; border-color: #fbbf24; }
+    .sync-error { color: var(--sell); border-color: var(--sell); }
     
     .hero-stat-card {
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -55,7 +56,7 @@
     textarea { width: 100%; height: 85px; background: #0b1120; border: 1px solid var(--border); border-radius: 8px; color: #fff; padding: 10px; font-size: 0.85rem; resize: none; margin-bottom: 8px; }
     button.action-btn { width: 100%; padding: 12px; background: #2563eb; color: #fff; font-size: 0.95rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
     button.action-btn:active { background: #1d4ed8; }
-    button.action-btn:disabled { background: #475569; cursor: not-allowed; }
+    button.action-btn:disabled { background: #475569 !important; cursor: not-allowed !important; opacity: 0.6; }
     
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
     @media (max-width: 500px) { .summary-grid { grid-template-columns: 1fr; } }
@@ -78,8 +79,9 @@
     .badge-buy { background: rgba(74, 222, 128, 0.2); color: var(--buy); }
     .date-cell { color: var(--text-sub); font-size: 0.75rem; }
 
-    .btn-row { display: flex; gap: 6px; }
+    .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .sub-btn { background: #1e293b; border: 1px solid var(--border); color: var(--text-sub); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+    .sub-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
     .modal-box { background: #1e293b; padding: 18px; border-radius: 12px; width: 90%; max-width: 380px; border: 1px solid var(--border); }
@@ -93,13 +95,13 @@
   <div class="top-header">
     <h1>
       <span>📊 프로젝트H</span>
-      <span class="sync-badge sync-wait" id="syncStatus">동기화 대기</span>
+      <span class="sync-badge sync-wait" id="syncStatus">클라우드 연결 중...</span>
     </h1>
     <div class="btn-row">
-      <button class="sub-btn" onclick="recalcAllAndSave()" style="color:var(--accent); border-color:var(--accent);">⚡ 손익재계산</button>
+      <button class="sub-btn" id="btnRecalc" onclick="recalcAllAndSave()" style="color:var(--accent); border-color:var(--accent);">⚡ 손익재계산</button>
       <button class="sub-btn" onclick="openTokenModal()">🔑 토큰설정</button>
       <button class="sub-btn" onclick="fetchFromGitHub()">🔄 새로고침</button>
-      <button class="sub-btn" onclick="openAddModal()">+ 종목추가</button>
+      <button class="sub-btn" id="btnAddStock" onclick="openAddModal()">+ 종목추가</button>
     </div>
   </div>
 
@@ -131,7 +133,7 @@
       </div>
     </div>
     <textarea id="kakaoInput" placeholder="카카오톡 체결 알림톡 전문을 복사해서 붙여넣으세요..."></textarea>
-    <button class="action-btn" id="submitBtn" onclick="parseAndRecord()">GitHub 클라우드에 즉시 저장</button>
+    <button class="action-btn" id="submitBtn" onclick="parseAndRecord()" disabled>로딩 대기 중...</button>
   </div>
 
   <!-- 보유 종목 카드 -->
@@ -211,9 +213,10 @@
     const GITHUB_OWNER = "imgates";
     const GITHUB_REPO = "KR-stock-reverse";
     const DATA_FILE_PATH = "data.json";
+    const LOCAL_BACKUP_KEY = "PROJECT_H_SAFE_BACKUP";
 
     let currentFileSha = null;
-    let isDataLoaded = false; // 정상 로드 완료 플래그
+    let isDataLoaded = false; // 안전 잠금장치: 정상 로딩 전에는 쓰기 작업 원천 차단
     let appData = {
       selectedTab: "ALL",
       portfolio: {},
@@ -230,6 +233,14 @@
       el.className = `sync-badge ${statusClass}`;
     }
 
+    function updateButtonStates(ready) {
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.disabled = !ready;
+      submitBtn.innerText = ready ? "GitHub 클라우드에 즉시 저장" : "데이터 로딩 대기 중...";
+      document.getElementById("btnRecalc").disabled = !ready;
+    }
+
+    // GitHub data.json 읽기
     async function fetchFromGitHub() {
       const token = getStoredToken();
       if (!token) {
@@ -239,6 +250,8 @@
       }
 
       setSyncStatus("동기화 중...", "sync-wait");
+      updateButtonStates(false);
+
       const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}?t=${Date.now()}`;
 
       try {
@@ -260,40 +273,66 @@
         const decodedContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
         const parsed = JSON.parse(decodedContent);
 
+        // 만약 GitHub에 저장된 파일 내용이 비어있다면, 로컬 백업 확인
+        const hasPortfolio = parsed.portfolio && Object.keys(parsed.portfolio).length > 0;
+        const hasTrades = Array.isArray(parsed.trades) && parsed.trades.length > 0;
+
+        if (!hasPortfolio && !hasTrades) {
+          const localBackup = localStorage.getItem(LOCAL_BACKUP_KEY);
+          if (localBackup) {
+            const confirmRestore = confirm("⚠️ GitHub 원격 파일 내용이 비어 있습니다!\n브라우저에 보관된 정상 백업 데이터로 복원하시겠습니까?");
+            if (confirmRestore) {
+              appData = JSON.parse(localBackup);
+              isDataLoaded = true;
+              updateButtonStates(true);
+              saveToGitHub("로컬 비상 백업본으로 data.json 자동 복원");
+              return;
+            }
+          }
+        }
+
         appData = {
           selectedTab: parsed.selectedTab || "ALL",
           portfolio: (parsed.portfolio && typeof parsed.portfolio === "object") ? parsed.portfolio : {},
           trades: Array.isArray(parsed.trades) ? parsed.trades : []
         };
         
+        // 정상 데이터인 경우 항상 로컬 비상 백업 갱신
+        if (Object.keys(appData.portfolio).length > 0 || appData.trades.length > 0) {
+          localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(appData));
+        }
+
         isDataLoaded = true;
         setSyncStatus("클라우드 동기화 완료", "sync-ok");
+        updateButtonStates(true);
         render();
       } catch (err) {
         console.error(err);
-        setSyncStatus("동기화 실패", "sync-wait");
+        setSyncStatus("동기화 실패", "sync-error");
+        updateButtonStates(false);
         alert("GitHub 로드 오류: " + err.message);
       }
     }
 
-    // GitHub data.json 쓰기 (충돌 방지 및 빈 데이터 차단 가드 포함)
+    // 🛡️ 핵심 방어: 빈 데이터 원천 덮어쓰기 차단 로직 탑재
     async function saveToGitHub(commitMsg = "대시보드 데이터 갱신") {
+      if (!isDataLoaded) {
+        alert("⚠️ 안전 잠금: 데이터를 완전히 불러오기 전에는 저장할 수 없습니다.");
+        return false;
+      }
+
+      // [안전 검사 1] 데이터가 0건인 상태로 원격 저장 시도 시 강제 차단
+      const stockCount = Object.keys(appData.portfolio || {}).length;
+      const tradeCount = (appData.trades || []).length;
+      if (stockCount === 0 && tradeCount === 0) {
+        alert("🚨 치명적 오류 방지: 저장하려는 데이터가 완전히 비어있습니다. 원격 파일 삭제를 방지하기 위해 저장을 강제 중단합니다.");
+        return false;
+      }
+
       const token = getStoredToken();
       if (!token) {
         alert("GitHub 토큰이 등록되어 있지 않습니다.");
         openTokenModal();
-        return false;
-      }
-
-      // 안전 가드 1: 데이터 로드 전 저장 시도 차단
-      if (!isDataLoaded) {
-        alert("클라우드 데이터를 아직 완전히 불러오지 못했습니다. 상단 [새로고침]을 먼저 눌러주세요.");
-        return false;
-      }
-
-      // 안전 가드 2: 포트폴리오가 통째로 비어있는 비정상 덮어쓰기 차단
-      if (!appData.portfolio || Object.keys(appData.portfolio).length === 0) {
-        alert("보유 종목 데이터가 비어있어 안전을 위해 저장을 일시 중단했습니다. 새로고침을 진행해 주세요.");
         return false;
       }
 
@@ -304,7 +343,7 @@
       const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`;
       
       try {
-        // 1. 저장 직전 항상 서버의 최신 SHA를 실시간 조회 (SHA 불일치 충돌 원천 방지)
+        // [안전 검사 2] 항상 서버의 실시간 최신 SHA를 먼저 확보하여 충돌 방지
         const getRes = await fetch(url + `?t=${Date.now()}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -318,7 +357,6 @@
           currentFileSha = latestData.sha;
         }
 
-        // 2. 최신 SHA를 장착해 원격 커밋
         const jsonStr = JSON.stringify(appData, null, 2);
         const encodedContent = btoa(unescape(encodeURIComponent(jsonStr)));
 
@@ -347,12 +385,15 @@
         currentFileSha = result.content.sha;
         setSyncStatus("클라우드 동기화 완료", "sync-ok");
         if (btn) btn.disabled = false;
+        
+        // 정상 저장 후 로컬 백업 갱신
+        localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(appData));
         render();
         return true;
       } catch (err) {
         console.error(err);
         if (btn) btn.disabled = false;
-        setSyncStatus("저장 실패", "sync-wait");
+        setSyncStatus("저장 실패", "sync-error");
         alert("저장 오류: " + err.message);
         return false;
       }
@@ -373,7 +414,7 @@
     async function recalcAllAndSave() {
       recalculatePnL();
       const ok = await saveToGitHub("종목 평단가 기준 전체 실현손익 일괄 재계산");
-      if (ok) alert("설정된 종목 평단가를 기준으로 전체 장부의 실현손실/손익이 올바르게 재계산되었습니다!");
+      if (ok) alert("설정된 평단가를 기준으로 전체 장부의 실현손익이 올바르게 재계산되었습니다!");
     }
 
     function extractDate(text) {
@@ -400,6 +441,8 @@
     }
 
     async function parseAndRecord() {
+      if (!isDataLoaded) return alert("데이터를 먼저 동기화한 후 진행해주세요.");
+
       const text = document.getElementById("kakaoInput").value;
       if (!text.trim()) return alert("메시지를 입력해주세요.");
 
@@ -419,7 +462,7 @@
       const targetDate = extractDate(text);
 
       if (!appData.portfolio[name]) {
-        alert(`[${name}] 신규 종목이 등록되었습니다. 평단가를 정확히 맞추려면 상단 [수정]을 눌러주세요.`);
+        alert(`[${name}] 신규 종목이 등록되었습니다. 평단가를 맞추려면 상단 [수정]을 눌러주세요.`);
         appData.portfolio[name] = { qty: 0, avgPrice: 0, cash: 0, targetQty: 0 };
       }
 
@@ -463,7 +506,7 @@
       const ok = await saveToGitHub(`[${name}] ${targetDate} ${type} ${newQty}주 체결 반영`);
       if (ok) {
         document.getElementById("kakaoInput").value = "";
-        alert(`[${name}] 체결이 성공적으로 동기화되었습니다.`);
+        alert(`[${name}] 체결이 성공적으로 반영되었습니다.`);
       }
     }
 
@@ -532,11 +575,10 @@
       }
 
       recalculatePnL();
-
       closeModal("editModal");
       const ok = await saveToGitHub(`[${name}] 종목 평단가(${price}원) 수정 및 장부 손익 재계산`);
       if (ok) {
-        alert(`[${name}] 수정된 정보가 클라우드에 안전하게 저장되었습니다.`);
+        alert(`[${name}] 수정된 평단가 기준으로 장부가 갱신되었습니다.`);
       }
     }
 
