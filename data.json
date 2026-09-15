@@ -20,9 +20,9 @@
       "targetQty": 0
     },
     "PLUS 코스피50": {
-      "qty": 2,
-      "avgPrice": 79280,
-      "cash": 596000,
+      "qty": 3,
+      "avgPrice": 80122,
+      "cash": 514195,
       "targetQty": 0
     },
     "KoAct 미국나스닥성장기업액티브": {
@@ -69,6 +69,14 @@
       "name": "SK스퀘어",
       "qty": 1,
       "price": 998000,
+      "pnl": 0
+    },
+    {
+      "date": "09.11",
+      "type": "매수",
+      "name": "PLUS 코스피50",
+      "qty": 1,
+      "price": 81805,
       "pnl": 0
     },
     {
