@@ -20,9 +20,9 @@
       "targetQty": 0
     },
     "PLUS 코스피50": {
-      "qty": 3,
-      "avgPrice": 80122,
-      "cash": 514195,
+      "qty": 4,
+      "avgPrice": 80532,
+      "cash": 432435,
       "targetQty": 0
     },
     "KoAct 미국나스닥성장기업액티브": {
@@ -75,9 +75,9 @@
       "date": "09.11",
       "type": "매수",
       "name": "PLUS 코스피50",
-      "qty": 1,
-      "price": 81805,
-      "pnl": 0
+      "qty": 2,
+      "price": 81783,
+      "pnl": 2502
     },
     {
       "date": "09.10",
