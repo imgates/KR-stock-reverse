@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-16 06:56:31",
+  "updated_at": "2026-09-17 06:56:47",
   "stocks": {
     "000660": {
       "name": "SK하이닉스",
@@ -7,14 +7,10 @@
       "reduce_target": 11,
       "avg_price": 2468866,
       "sell_qty": 1,
-      "star_point": 1763800,
-      "sell_order": 1764000,
-      "buy_order": 1763000,
+      "star_point": 1741800,
+      "sell_order": 1742000,
+      "buy_order": 1741000,
       "history": [
-        {
-          "date": "09.10",
-          "close": 1853000
-        },
         {
           "date": "09.11",
           "close": 1812000
@@ -29,7 +25,11 @@
         },
         {
           "date": "09.16",
-          "close": 1759000
+          "close": 1757000
+        },
+        {
+          "date": "09.17",
+          "close": 1745000
         }
       ]
     },
@@ -39,14 +39,10 @@
       "reduce_target": 8,
       "avg_price": 1848188,
       "sell_qty": 1,
-      "star_point": 1051600,
-      "sell_order": 1052000,
-      "buy_order": 1051000,
+      "star_point": 1025600,
+      "sell_order": 1026000,
+      "buy_order": 1025000,
       "history": [
-        {
-          "date": "09.10",
-          "close": 1135000
-        },
         {
           "date": "09.11",
           "close": 1089000
@@ -61,7 +57,11 @@
         },
         {
           "date": "09.16",
-          "close": 1020000
+          "close": 1017000
+        },
+        {
+          "date": "09.17",
+          "close": 1008000
         }
       ]
     }
