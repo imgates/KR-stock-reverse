@@ -1,5 +1,5 @@
 {
-  "selectedTab": "삼성전자",
+  "selectedTab": "TIGER 미국필라델피아반도체나스닥",
   "portfolio": {
     "SK하이닉스": {
       "qty": 12,
@@ -14,9 +14,9 @@
       "targetQty": 2
     },
     "TIGER 미국필라델피아반도체나스닥": {
-      "qty": 94,
+      "qty": 84,
       "avgPrice": 47684,
-      "cash": 1073695,
+      "cash": 1489945,
       "targetQty": 0
     },
     "PLUS 코스피50": {
@@ -39,6 +39,14 @@
     }
   },
   "trades": [
+    {
+      "date": "09.18",
+      "type": "매도",
+      "name": "TIGER 미국필라델피아반도체나스닥",
+      "qty": 10,
+      "price": 41625,
+      "pnl": -60590
+    },
     {
       "date": "09.18",
       "type": "매수",
