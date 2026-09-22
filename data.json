@@ -1,5 +1,5 @@
 {
-  "selectedTab": "TIGER 미국필라델피아반도체나스닥",
+  "selectedTab": "KoAct 미국나스닥성장기업액티브",
   "portfolio": {
     "SK하이닉스": {
       "qty": 11,
@@ -26,9 +26,9 @@
       "targetQty": 0
     },
     "KoAct 미국나스닥성장기업액티브": {
-      "qty": 32,
+      "qty": 8,
       "avgPrice": 22942,
-      "cash": 3305490,
+      "cash": 3779970,
       "targetQty": 0
     },
     "삼성전자": {
@@ -39,6 +39,14 @@
     }
   },
   "trades": [
+    {
+      "date": "09.22",
+      "type": "매도",
+      "name": "KoAct 미국나스닥성장기업액티브",
+      "qty": 24,
+      "price": 19770,
+      "pnl": -76128
+    },
     {
       "date": "09.22",
       "type": "매도",
