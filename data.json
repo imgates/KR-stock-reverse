@@ -2,9 +2,9 @@
   "selectedTab": "SK하이닉스",
   "portfolio": {
     "SK하이닉스": {
-      "qty": 13,
+      "qty": 12,
       "avgPrice": 2363671,
-      "cash": 3607000,
+      "cash": 5357000,
       "targetQty": 3
     },
     "SK스퀘어": {
@@ -54,6 +54,14 @@
       "qty": 1,
       "price": 1850000,
       "pnl": -513671
+    },
+    {
+      "date": "09.16",
+      "type": "매도",
+      "name": "SK하이닉스",
+      "qty": 1,
+      "price": 1750000,
+      "pnl": -613671
     },
     {
       "date": "09.15",
