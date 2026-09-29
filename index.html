@@ -133,7 +133,7 @@
       </div>
     </div>
     <textarea id="kakaoInput" placeholder="카카오톡 체결 알림톡 전문을 복사해서 붙여넣으세요..."></textarea>
-    <button class="action-btn" id="submitBtn" onclick="parseAndRecord()" disabled>로딩 대기 중...</button>
+    <button class="action-btn" id="submitBtn" onclick="parseAndRecord()" disabled>데이터 로딩 대기 중...</button>
   </div>
 
   <!-- 보유 종목 카드 -->
@@ -169,7 +169,7 @@
     <div class="modal-box">
       <h3 style="font-size: 1rem; margin-bottom: 8px;">🔑 GitHub 토큰(PAT) 등록</h3>
       <p style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 12px; line-height: 1.4;">
-        GitHub API로 실시간 읽기/쓰기를 수행하기 위한 토큰입니다. 이 기기 브라우저에만 암호화 보관됩니다.
+        GitHub API로 실시간 읽기/쓰기를 수행하기 위한 토큰입니다. 이 기기 브라우저에만 안전하게 보관됩니다.
       </p>
       <div class="form-group">
         <label>Personal Access Token (classic)</label>
@@ -213,7 +213,7 @@
     const GITHUB_OWNER = "imgates";
     const GITHUB_REPO = "KR-stock-reverse";
     const DATA_FILE_PATH = "data.json";
-    const LOCAL_BACKUP_KEY = "PROJECT_H_SAFE_BACKUP";
+    const LOCAL_BACKUP_KEY = "PROJECT_H_SAFE_BACKUP_V2";
 
     let currentFileSha = null;
     let isDataLoaded = false;
@@ -263,7 +263,7 @@
           cache: "no-store"
         });
 
-        if (res.status === 401) throw new Error("토큰 인증 실패 (토큰을 재확인하세요)");
+        if (res.status === 401) throw new Error("토큰 인증 실패 (권한 또는 만료 확인 필요)");
         if (res.status === 404) throw new Error("저장소에 data.json 파일이 없습니다.");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -276,10 +276,11 @@
         const hasPortfolio = parsed.portfolio && Object.keys(parsed.portfolio).length > 0;
         const hasTrades = Array.isArray(parsed.trades) && parsed.trades.length > 0;
 
+        // 원격 파일이 0건일 때 자동 로컬 비상 복원 안내
         if (!hasPortfolio && !hasTrades) {
           const localBackup = localStorage.getItem(LOCAL_BACKUP_KEY);
           if (localBackup) {
-            const confirmRestore = confirm("⚠️ GitHub 원격 파일 내용이 비어 있습니다!\n브라우저에 보관된 정상 백업본으로 복원하시겠습니까?");
+            const confirmRestore = confirm("⚠️ GitHub 원격 파일이 비어 있습니다!\n브라우저에 저장된 정상 백업 데이터로 즉시 복원하시겠습니까?");
             if (confirmRestore) {
               appData = JSON.parse(localBackup);
               isDataLoaded = true;
@@ -296,6 +297,7 @@
           trades: Array.isArray(parsed.trades) ? parsed.trades : []
         };
         
+        // 정상 수신 시 로컬 스냅샷 항상 갱신
         if (Object.keys(appData.portfolio).length > 0 || appData.trades.length > 0) {
           localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(appData));
         }
@@ -312,17 +314,18 @@
       }
     }
 
-    // GitHub data.json 쓰기 (최신 SHA 강제 취득 및 빈 데이터 덮어쓰기 방어)
+    // 🛡️ 핵심 안전 잠금(Dead-man's Switch) 내장 저장 함수
     async function saveToGitHub(commitMsg = "대시보드 데이터 갱신") {
       if (!isDataLoaded) {
         alert("⚠️ 안전 잠금: 데이터를 완전히 불러오기 전에는 저장할 수 없습니다.");
         return false;
       }
 
+      // 1. 빈 데이터 전송 강제 차단
       const stockCount = Object.keys(appData.portfolio || {}).length;
       const tradeCount = (appData.trades || []).length;
       if (stockCount === 0 && tradeCount === 0) {
-        alert("🚨 치명적 오류 방지: 저장하려는 데이터가 완전히 비어있습니다. 저장을 강제 중단합니다.");
+        alert("🚨 안전 장치 발동: 전송하려는 데이터가 비어 있어 GitHub 저장을 강제 중단했습니다.");
         return false;
       }
 
@@ -340,6 +343,7 @@
       const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`;
       
       try {
+        // 2. 저장 직전 서버의 최신 SHA를 강제 조회 (버전 충돌 원천 방지)
         const getRes = await fetch(url + `?t=${Date.now()}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -394,7 +398,7 @@
       }
     }
 
-    // 종목별 평단가 기준 전체 손익 일괄 재계산 (매수는 무조건 0원 고정)
+    // 종목별 평단가 기준 전체 실현손익 일괄 재계산 (매수 건은 무조건 0원 강제)
     function recalculatePnL() {
       if (!appData.trades || !appData.portfolio) return;
       appData.trades.forEach(t => {
@@ -404,7 +408,7 @@
             t.pnl = (t.price - p.avgPrice) * t.qty;
           }
         } else {
-          t.pnl = 0; // 매수는 손익 발생 없음
+          t.pnl = 0; // 매수는 손익 무조건 0
         }
       });
     }
@@ -412,7 +416,7 @@
     async function recalcAllAndSave() {
       recalculatePnL();
       const ok = await saveToGitHub("종목 평단가 기준 전체 실현손익 일괄 재계산");
-      if (ok) alert("설정된 평단가를 기준으로 전체 장부의 실현손익이 올바르게 재계산되었습니다!");
+      if (ok) alert("설정된 종목 평단가를 기준으로 전체 장부의 실현손익이 올바르게 재계산되었습니다!");
     }
 
     function extractDate(text) {
@@ -438,7 +442,7 @@
       return `${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
     }
 
-    // 카톡 파싱 및 체결 내역 추가 (매수 시 pnl 오염 방지 적용)
+    // 카톡 알림 파싱 및 기록 (매수 손익 오염 차단)
     async function parseAndRecord() {
       if (!isDataLoaded) return alert("데이터를 먼저 동기화한 후 진행해주세요.");
 
@@ -608,7 +612,7 @@
 
       const tradesArr = Array.isArray(appData.trades) ? appData.trades : [];
       tradesArr.forEach(t => {
-        if (typeof t.pnl === "number") totalLoss += t.pnl;
+        if (t.type === "매도" && typeof t.pnl === "number") totalLoss += t.pnl;
       });
 
       const heroEl = document.getElementById("heroTotalLoss");
@@ -636,7 +640,7 @@
       let tabCash = 0;
 
       filteredTrades.forEach(t => {
-        if (t.pnl) tabLoss += t.pnl;
+        if (t.type === "매도" && t.pnl) tabLoss += t.pnl;
         if (t.type === "매도") tabCash += (t.price * t.qty);
       });
 
@@ -651,13 +655,12 @@
       } else {
         history.innerHTML = filteredTrades.map(t => {
           const badgeClass = t.type === "매도" ? "badge-sell" : "badge-buy";
-          
           let pnlDisplay = "-";
           let pnlColor = "inherit";
-          
+
           if (t.type === "매도" && typeof t.pnl === "number") {
-            pnlColor = t.pnl < 0 ? 'var(--sell)' : (t.pnl > 0 ? 'var(--buy)' : 'inherit');
-            pnlDisplay = (t.pnl > 0 ? "+" : "") + t.pnl.toLocaleString() + "원";
+            pnlDisplay = t.pnl.toLocaleString() + "원";
+            pnlColor = t.pnl < 0 ? "var(--sell)" : (t.pnl > 0 ? "var(--buy)" : "inherit");
           }
 
           return `
